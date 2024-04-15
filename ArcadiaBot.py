@@ -5,11 +5,13 @@
 
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pydub import AudioSegment
+from dotenv import load_dotenv
 
 import requests
 import logging
-from pydub import AudioSegment
 import smtplib
+from os import environ
 from os.path import basename
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
@@ -18,8 +20,8 @@ from email.utils import COMMASPACE, formatdate
 from datetime import datetime
 import signal
 
-
-API_TOKEN = 'TU-APIKEY-AQUI'
+dotenv_config = load_dotenv('.bot.env')
+API_TOKEN = environ.get('ARCADIABOT_TOKEN')
 ARCADIA_URL= 'http://host.docker.internal:8000'
 
 bot = telebot.TeleBot(API_TOKEN)
@@ -48,8 +50,8 @@ def send_mail(send_from, send_to, subject, text, files=None,
         msg.attach(part)
 
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp_server:
-        smtp_server.login(send_from, 'CONTRASENA-CORREO-ORIGEN')
+    with smtplib.SMTP_SSL(environ.get('SENDER_MAIL_SERVER'), environ.get('SENDER_MAIL_PORT')) as smtp_server:
+        smtp_server.login(send_from, environ.get('SENDER_MAIL_PASSWORD'))
         smtp_server.sendmail(send_from, send_to, msg.as_string())
     smtp_server.close()
 
@@ -64,7 +66,7 @@ def tts(text):
 
 def send_log():
     logging.info('FIN EJECUCIÓN')
-    send_mail('CORREO-ORIGEN',['CORREO-DESTINO'],'Log Arcadia','Adjunto log',['log.csv'])
+    send_mail(environ.get('SENDER_MAIL'),[environ.get('RECEIVER_MAIL')],'Log Arcadia','Adjunto log',['log.csv'])
 
 def exit_interruption_handler(_signo, _stack_frame):
     send_log()
